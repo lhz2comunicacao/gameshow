@@ -4,7 +4,7 @@ set -euo pipefail
 PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$PROJECT_ROOT"
 
-./gradlew assembleDebug assembleRelease
+gradle assembleDebug assembleRelease
 
 echo "\nArtifacts (debug):"
 ls -1 app/build/outputs/apk/debug || true

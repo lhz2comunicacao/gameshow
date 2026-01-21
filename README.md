@@ -4,8 +4,20 @@ Aplicativo simples de jogo da forca em Kotlin/Jetpack Compose. O usuário seleci
 
 ## Como gerar o APK (sem assinatura da Play Store)
 
+Requisitos locais:
+
+- JDK 17
+- Android SDK com `platforms;android-34` e `build-tools;34.0.0`
+- Gradle instalado localmente (usado pelos scripts de build)
+
+Exemplo de instalação via `sdkmanager` (após instalar o Android SDK):
+
 ```bash
-./gradlew assembleDebug assembleRelease
+sdkmanager "platforms;android-34" "build-tools;34.0.0"
+```
+
+```bash
+gradle assembleDebug assembleRelease
 ```
 
 Também é possível usar o script auxiliar:

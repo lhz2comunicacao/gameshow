@@ -5,10 +5,10 @@ PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$PROJECT_ROOT"
 
 echo "[1/4] Limpando builds anteriores"
-./gradlew clean
+gradle clean
 
 echo "[2/4] Compilando APKs debug e release"
-./gradlew assembleDebug assembleRelease
+gradle assembleDebug assembleRelease
 
 echo "[3/4] Listando artefatos gerados"
 find app/build/outputs/apk -type f -name "*.apk" -print
