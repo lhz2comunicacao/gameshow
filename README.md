@@ -23,6 +23,10 @@ app/build/outputs/apk/release/app-release.apk
 
 O APK de release não é assinado para publicação na Play Store. O APK de debug é assinado automaticamente com a chave de debug do Android. Para instalar manualmente em um dispositivo, habilite a opção de instalação de fontes desconhecidas.
 
+## Build automatizado (YAML)
+
+Há um workflow GitHub Actions em `.github/workflows/build-apk.yml` que compila os APKs de debug e release e publica os artefatos. Ele pode ser executado manualmente em **Actions** (workflow_dispatch) para acompanhar todo o processo até a compilação.
+
 ## Compatibilidade com processadores
 
 O app não usa bibliotecas nativas (NDK). A configuração gera APKs por arquitetura e também um APK universal compatível com ARM, ARM64, x86 e x86_64. Os APKs universais ficam em `app/build/outputs/apk/{debug,release}/app-*-universal.apk`.
