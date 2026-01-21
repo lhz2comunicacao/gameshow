@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">Forca</string>
+    <string name="select_file">Selecionar arquivo</string>
+    <string name="new_word">Nova palavra</string>
+    <string name="guess">Chutar</string>
+    <string name="letter_hint">Letra</string>
+    <string name="status_select_file">Selecione um arquivo de texto com uma palavra por linha.</string>
+    <string name="status_invalid_file">Arquivo sem palavras válidas.</string>
+    <string name="status_load_file_first">Carregue um arquivo primeiro.</string>
+    <string name="status_new_word">Nova palavra sorteada!</string>
+    <string name="status_enter_letter">Digite uma letra.</string>
+    <string name="status_only_letters">Use apenas letras.</string>
+    <string name="status_already_used">Você já tentou essa letra.</string>
+    <string name="status_wrong_letter">Letra errada.</string>
+    <string name="status_good_guess">Boa!</string>
+    <string name="status_game_over">Fim de jogo! A palavra era %1$s.</string>
+    <string name="status_win">Você venceu!</string>
+    <string name="errors_format">Erros: %1$d / %2$d</string>
+    <string name="letters_format">Letras usadas: %1$s</string>
 </resources>

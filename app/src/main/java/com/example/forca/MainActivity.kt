@@ -1,241 +1,164 @@
 package com.example.forca
 
+import android.content.ContentResolver
 import android.net.Uri
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+    private lateinit var statusText: TextView
+    private lateinit var errorsText: TextView
+    private lateinit var wordText: TextView
+    private lateinit var lettersText: TextView
+    private lateinit var inputLetter: EditText
+    private lateinit var guessButton: Button
+    private lateinit var newWordButton: Button
+
+    private var wordList: List<String> = emptyList()
+    private var currentWord: String = ""
+    private var guessedLetters: MutableSet<Char> = mutableSetOf()
+    private var wrongGuesses: Int = 0
+
+    private val filePicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            val loaded = readLinesFromUri(contentResolver, it)
+                .map { line -> line.trim() }
+                .filter { line -> line.isNotEmpty() }
+            if (loaded.isEmpty()) {
+                setStatus(getString(R.string.status_invalid_file))
+            } else {
+                wordList = loaded
+                startNewRound()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    ForcaScreen()
-                }
-            }
+        setContentView(R.layout.activity_main)
+
+        statusText = findViewById(R.id.text_status)
+        errorsText = findViewById(R.id.text_errors)
+        wordText = findViewById(R.id.text_word)
+        lettersText = findViewById(R.id.text_letters)
+        inputLetter = findViewById(R.id.input_letter)
+        guessButton = findViewById(R.id.button_guess)
+        newWordButton = findViewById(R.id.button_new_word)
+
+        setStatus(getString(R.string.status_select_file))
+
+        findViewById<Button>(R.id.button_select_file).setOnClickListener {
+            filePicker.launch(arrayOf("text/plain"))
         }
-    }
-}
 
-private const val MAX_ERRORS = 6
-
-@Composable
-fun ForcaScreen() {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val wordList = remember { mutableStateOf<List<String>>(emptyList()) }
-    val currentWord = remember { mutableStateOf("") }
-    val guessedLetters = remember { mutableStateOf(setOf<Char>()) }
-    val wrongGuesses = remember { mutableStateOf(0) }
-    val statusMessage = remember { mutableStateOf("Selecione um arquivo de texto com uma palavra por linha.") }
-    val inputLetter = remember { mutableStateOf("") }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            scope.launch {
-                val loaded = withContext(Dispatchers.IO) {
-                    readLinesFromUri(context.contentResolver, uri)
-                }
-                val cleaned = loaded.map { it.trim() }.filter { it.isNotEmpty() }
-                if (cleaned.isEmpty()) {
-                    statusMessage.value = "Arquivo sem palavras válidas."
-                } else {
-                    wordList.value = cleaned
-                    startNewRound(wordList, currentWord, guessedLetters, wrongGuesses, statusMessage)
-                }
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Jogo da Forca",
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Text(text = statusMessage.value)
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = { launcher.launch(arrayOf("text/plain")) }) {
-                Text(text = "Selecionar arquivo")
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Button(
-                onClick = {
-                    if (wordList.value.isNotEmpty()) {
-                        startNewRound(wordList, currentWord, guessedLetters, wrongGuesses, statusMessage)
-                    } else {
-                        statusMessage.value = "Carregue um arquivo primeiro."
-                    }
-                }
-            ) {
-                Text(text = "Nova palavra")
+        newWordButton.setOnClickListener {
+            if (wordList.isNotEmpty()) {
+                startNewRound()
+            } else {
+                setStatus(getString(R.string.status_load_file_first))
             }
         }
 
-        if (currentWord.value.isNotEmpty()) {
-            Text(text = "Erros: ${wrongGuesses.value} / $MAX_ERRORS")
-            Text(
-                text = maskedWord(currentWord.value, guessedLetters.value),
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Text(text = "Letras usadas: ${guessedLetters.value.sorted().joinToString(", ")}")
-
-            OutlinedTextField(
-                value = inputLetter.value,
-                onValueChange = { value ->
-                    inputLetter.value = value.take(1).uppercase()
-                },
-                label = { Text(text = "Letra") },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Characters,
-                    keyboardType = KeyboardType.Text
-                ),
-                modifier = Modifier.width(120.dp)
-            )
-
-            Button(
-                onClick = {
-                    submitGuess(
-                        inputLetter,
-                        currentWord,
-                        guessedLetters,
-                        wrongGuesses,
-                        statusMessage
-                    )
-                }
-            ) {
-                Text(text = "Chutar")
-            }
+        guessButton.setOnClickListener {
+            submitGuess()
         }
+
+        refreshUi()
     }
 
-    LaunchedEffect(wrongGuesses.value, guessedLetters.value, currentWord.value) {
-        checkGameState(currentWord, guessedLetters, wrongGuesses, statusMessage)
-    }
-}
-
-private fun readLinesFromUri(contentResolver: android.content.ContentResolver, uri: Uri): List<String> {
-    return contentResolver.openInputStream(uri)?.bufferedReader()?.useLines { lines ->
-        lines.toList()
-    } ?: emptyList()
-}
-
-private fun startNewRound(
-    wordList: MutableState<List<String>>,
-    currentWord: MutableState<String>,
-    guessedLetters: MutableState<Set<Char>>,
-    wrongGuesses: MutableState<Int>,
-    statusMessage: MutableState<String>
-) {
-    val word = wordList.value.random().uppercase()
-    currentWord.value = word
-    guessedLetters.value = emptySet()
-    wrongGuesses.value = 0
-    statusMessage.value = "Nova palavra sorteada!"
-}
-
-private fun submitGuess(
-    inputLetter: MutableState<String>,
-    currentWord: MutableState<String>,
-    guessedLetters: MutableState<Set<Char>>,
-    wrongGuesses: MutableState<Int>,
-    statusMessage: MutableState<String>
-) {
-    val letter = inputLetter.value.trim().uppercase()
-    if (letter.isEmpty()) {
-        statusMessage.value = "Digite uma letra."
-        return
-    }
-    val char = letter.first()
-    if (!char.isLetter()) {
-        statusMessage.value = "Use apenas letras."
-        inputLetter.value = ""
-        return
-    }
-    if (guessedLetters.value.contains(char)) {
-        statusMessage.value = "Você já tentou essa letra."
-        inputLetter.value = ""
-        return
+    private fun readLinesFromUri(contentResolver: ContentResolver, uri: Uri): List<String> {
+        return contentResolver.openInputStream(uri)?.bufferedReader()?.useLines { lines ->
+            lines.toList()
+        } ?: emptyList()
     }
 
-    guessedLetters.value = guessedLetters.value + char
-    if (!currentWord.value.contains(char)) {
-        wrongGuesses.value = wrongGuesses.value + 1
-        statusMessage.value = "Letra errada."
-    } else {
-        statusMessage.value = "Boa!"
+    private fun startNewRound() {
+        currentWord = wordList.random().uppercase()
+        guessedLetters = mutableSetOf()
+        wrongGuesses = 0
+        setStatus(getString(R.string.status_new_word))
+        refreshUi()
     }
-    inputLetter.value = ""
-}
 
-private fun maskedWord(word: String, guessedLetters: Set<Char>): String {
-    return word.map { char ->
+    private fun submitGuess() {
+        val letter = inputLetter.text.toString().trim().uppercase()
+        if (letter.isEmpty()) {
+            setStatus(getString(R.string.status_enter_letter))
+            return
+        }
+        val char = letter.first()
         if (!char.isLetter()) {
-            char
-        } else if (guessedLetters.contains(char)) {
-            char
-        } else {
-            '_'
+            setStatus(getString(R.string.status_only_letters))
+            inputLetter.setText("")
+            return
         }
-    }.joinToString(" ")
-}
+        if (guessedLetters.contains(char)) {
+            setStatus(getString(R.string.status_already_used))
+            inputLetter.setText("")
+            return
+        }
 
-private fun checkGameState(
-    currentWord: MutableState<String>,
-    guessedLetters: MutableState<Set<Char>>,
-    wrongGuesses: MutableState<Int>,
-    statusMessage: MutableState<String>
-) {
-    if (currentWord.value.isEmpty()) {
-        return
+        guessedLetters.add(char)
+        if (!currentWord.contains(char)) {
+            wrongGuesses += 1
+            setStatus(getString(R.string.status_wrong_letter))
+        } else {
+            setStatus(getString(R.string.status_good_guess))
+        }
+        inputLetter.setText("")
+        refreshUi()
+        checkGameState()
     }
-    if (wrongGuesses.value >= MAX_ERRORS) {
-        statusMessage.value = "Fim de jogo! A palavra era ${currentWord.value}."
-        return
+
+    private fun refreshUi() {
+        errorsText.text = getString(R.string.errors_format, wrongGuesses, MAX_ERRORS)
+        wordText.text = maskedWord(currentWord, guessedLetters)
+        lettersText.text = getString(
+            R.string.letters_format,
+            guessedLetters.sorted().joinToString(", ")
+        )
     }
-    val allGuessed = currentWord.value
-        .filter { it.isLetter() }
-        .all { guessedLetters.value.contains(it) }
-    if (allGuessed) {
-        statusMessage.value = "Você venceu!"
+
+    private fun maskedWord(word: String, guessedLetters: Set<Char>): String {
+        if (word.isEmpty()) {
+            return ""
+        }
+        return word.map { char ->
+            when {
+                !char.isLetter() -> char
+                guessedLetters.contains(char) -> char
+                else -> '_'
+            }
+        }.joinToString(" ")
+    }
+
+    private fun checkGameState() {
+        if (currentWord.isEmpty()) {
+            return
+        }
+        if (wrongGuesses >= MAX_ERRORS) {
+            setStatus(getString(R.string.status_game_over, currentWord))
+            return
+        }
+        val allGuessed = currentWord
+            .filter { it.isLetter() }
+            .all { guessedLetters.contains(it) }
+        if (allGuessed) {
+            setStatus(getString(R.string.status_win))
+        }
+    }
+
+    private fun setStatus(message: String) {
+        statusText.text = message
+    }
+
+    companion object {
+        private const val MAX_ERRORS = 6
     }
 }
