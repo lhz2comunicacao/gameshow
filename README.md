@@ -5,20 +5,29 @@ Aplicativo simples de jogo da forca em Kotlin/Jetpack Compose. O usuário seleci
 ## Como gerar o APK (sem assinatura da Play Store)
 
 ```bash
-./gradlew assembleRelease
+./gradlew assembleDebug assembleRelease
 ```
 
-O APK será gerado em:
+Também é possível usar o script auxiliar:
+
+```bash
+./scripts/build_apks.sh
+```
+
+Os APKs serão gerados em:
 
 ```
+app/build/outputs/apk/debug/
 app/build/outputs/apk/release/app-release.apk
 ```
 
-Esse APK não é assinado para publicação na Play Store. Para instalar manualmente em um dispositivo, habilite a opção de instalação de fontes desconhecidas.
+O APK de release não é assinado para publicação na Play Store. O APK de debug é assinado automaticamente com a chave de debug do Android. Para instalar manualmente em um dispositivo, habilite a opção de instalação de fontes desconhecidas.
 
 ## Compatibilidade com processadores
 
-O app não usa bibliotecas nativas (NDK), então o APK é universal e compatível com diferentes arquiteturas (ARM, ARM64, x86, x86_64) suportadas pelo Android.
+O app não usa bibliotecas nativas (NDK). A configuração gera APKs por arquitetura e também um APK universal compatível com ARM, ARM64, x86 e x86_64. Os APKs universais ficam em `app/build/outputs/apk/{debug,release}/app-*-universal.apk`.
+
+Compatibilidade mínima: Android 10 (API 29) ou superior.
 
 ## Como jogar
 
