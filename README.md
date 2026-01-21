@@ -14,6 +14,12 @@ Também é possível usar o script auxiliar:
 ./scripts/build_apks.sh
 ```
 
+Para acompanhar todo o processo em detalhes (limpar, compilar, listar e validar hash dos APKs):
+
+```bash
+./scripts/build_and_verify_apks.sh
+```
+
 Os APKs serão gerados em:
 
 ```
@@ -26,6 +32,8 @@ O APK de release não é assinado para publicação na Play Store. O APK de debu
 ## Build automatizado (YAML)
 
 Há um workflow GitHub Actions em `.github/workflows/build-apk.yml` que compila os APKs de debug e release e publica os artefatos. Ele pode ser executado manualmente em **Actions** (workflow_dispatch) para acompanhar todo o processo até a compilação.
+
+> Observação: este ambiente não executa o GitHub Actions diretamente. Use o workflow no repositório para acompanhar o build no GitHub e baixar os APKs gerados como artefatos.
 
 ## Compatibilidade com processadores
 
